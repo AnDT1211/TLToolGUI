@@ -28,7 +28,9 @@ public class ExcelToolGUI extends javax.swing.JFrame {
     List<File> listFileInputStep1;
     List<File> listFileOutputStep2;
 
-    private final static String PATH_TEMPLATE_EXCEL_FILE = "C:\\Users\\andt\\EC\\EC41_ESS_Andt\\TL\\template\\template.xlsx";   // TODO sua lai duong dan tuong doi
+    private final static String PATH_TEMPLATE_EXCEL_FILE = "Template\\template.xlsx";   // TODO sua lai duong dan tuong doi
+
+    private final static String outputFileNameStep1 = "Combined_Output.xlsx";
 
 
     /**
@@ -507,6 +509,11 @@ public class ExcelToolGUI extends javax.swing.JFrame {
         if (StringUtils.isBlank(textFieldFilePathSheetName_step1.getText())) {
             return;
         }
+
+        if (textFieldFilePathSheetName_step1.getText().startsWith("\"") && textFieldFilePathSheetName_step1.getText().endsWith("\"")) {
+            textFieldFilePathSheetName_step1.setText(textFieldFilePathSheetName_step1.getText().substring(1, textFieldFilePathSheetName_step1.getText().length() - 1));
+        }
+
         if (isDirectory(textFieldFilePathSheetName_step1.getText())) {
             JOptionPane.showMessageDialog(null, "Hãy Input đường dẫn của File chứa tên sheets", "ERROR", JOptionPane.ERROR_MESSAGE);
             return;
@@ -519,9 +526,6 @@ public class ExcelToolGUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_textFieldFilePathSheetName_step1FocusLost
 
-
-
-    private final static String outputFileNameStep1 = "Output_Step1.xlsx";
 
 
     /**
@@ -762,9 +766,15 @@ public class ExcelToolGUI extends javax.swing.JFrame {
         if (StringUtils.isBlank(textFileFileAlreadyReplacePath.getText())) {
             return;
         }
+
+        if (textFileFileAlreadyReplacePath.getText().startsWith("\"") && textFileFileAlreadyReplacePath.getText().endsWith("\"")) {
+            textFileFileAlreadyReplacePath.setText(textFileFileAlreadyReplacePath.getText().substring(1, textFileFileAlreadyReplacePath.getText().length() - 1));
+        }
+
         if (!checkFolderExist(textFileFileAlreadyReplacePath.getText())) {
             JOptionPane.showMessageDialog(null, "File không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
+
 
     }//GEN-LAST:event_textFileFileAlreadyReplacePathFocusLost
 
