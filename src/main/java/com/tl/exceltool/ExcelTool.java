@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import com.spire.xls.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -31,35 +33,37 @@ public class ExcelTool {
 
     private final static String PATH_INPUT_FILE_STEP2 = folderOutStep1 + "/" + outputFileNameStep1;
     private final static String PATH_OUTPUT_FOLDER_STEP2 = folderTKCTStep1;
-    
-    
+
+
     static List<String> sheetNames = new ArrayList<>() {
         {
             add("処理概要");
             add("IF編集仕様");
             add("ファイルレイアウト");
-            add("処理概要 (SQL)①");
-            add("処理概要 (SQL)②");
-            add("処理概要 (SQL)③");
-            add("処理概要 (SQL)④");
-            add("処理概要 (SQL)⑤");
-            add("処理概要 (SQL)⑥");
-            add("処理概要 (SQL)⑦");
-            add("処理概要 (SQL)⑧");
-            add("処理概要 (SQL)⑨");
-            add("処理概要 (SQL)⑩");
-            add("処理概要 (SQL)⑪");
-            add("処理概要 (SQL)⑫");
-            add("処理概要 (SQL)⑬");
-            add("処理概要 (SQL)⑭");
-            add("処理概要 (SQL)⑮");
-            add("処理概要 (SQL)⑯");
-            add("処理概要 (SQL)⑰");
-            add("処理概要 (SQL)⑱");
-            add("処理概要 (SQL)⑲");
-            add("処理概要 (SQL)⑳");
+            add("処理概要(SQL)①");
+            add("処理概要(SQL)②");
+            add("処理概要(SQL)③");
+            add("処理概要(SQL)④");
+            add("処理概要(SQL)⑤");
+            add("処理概要(SQL)⑥");
+            add("処理概要(SQL)⑦");
+            add("処理概要(SQL)⑧");
+            add("処理概要(SQL)⑨");
+            add("処理概要(SQL)⑩");
+            add("処理概要(SQL)⑪");
+            add("処理概要(SQL)⑫");
+            add("処理概要(SQL)⑬");
+            add("処理概要(SQL)⑭");
+            add("処理概要(SQL)⑮");
+            add("処理概要(SQL)⑯");
+            add("処理概要(SQL)⑰");
+            add("処理概要(SQL)⑱");
+            add("処理概要(SQL)⑲");
+            add("処理概要(SQL)⑳");
         }
     };
+
+    private static final String regex = "^\\d{3}_";
 
     /**
      * https://docs.aspose.com/cells/java/re-order-sheets-within-workbook/ <br>
@@ -164,42 +168,45 @@ public class ExcelTool {
         sourceWorkbook.dispose();
         targetWorkbook.dispose();
     }
-    
-    
+
+
     public static void main(String[] args) throws Exception {
 
         step1(folderTKCTStep1, folderOutStep1, outputFileNameStep1);
         step2(PATH_INPUT_FILE_STEP2, PATH_OUTPUT_FOLDER_STEP2);
 
-//        duplicateSheetInWorkbook();
-//        renameSheet();
     }
 
-    
+    /**
+     *
+     * @param pathInputFileStep2     file tong hop sheet
+     * @param pathOutputFolderStep2  folder chua TKCT
+     * @throws Exception
+     */
     private static void step2(String pathInputFileStep2, String pathOutputFolderStep2) throws Exception {
         Workbook targetWorkbook = new Workbook();
         Workbook sourceWorkbook = new Workbook();
         sourceWorkbook.loadFromFile(pathInputFileStep2);
-        
+
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(pathOutputFolderStep2))) {
             OUTER: for (Path path : stream) {
                 String noFile = path.getFileName().toString().substring(0, 3);
-                
+
                 INNER: for (int i = 0; i < sourceWorkbook.getWorksheets().size(); i++) {
                     Worksheet sourceSheet = sourceWorkbook.getWorksheets().get(i);
                     String sheetNameSource = sourceSheet.getName();
                     String noFileSheetNameSource = sheetNameSource.substring(0, 3);
-                    
+
                     if (noFile.equals(noFileSheetNameSource)) {
                         targetWorkbook.loadFromFile(path.toString());
-                        
+
                         for (int j = 0; j < targetWorkbook.getWorksheets().size(); j++) {
                             Worksheet SheetTarget = targetWorkbook.getWorksheets().get(j);
                             String sheetNameTarget = SheetTarget.getName();
-                            
+
                             if (sheetNameTarget.replaceAll("\\s", "").strip().equals(sheetNameSource.replaceAll("\\s", "").strip().substring(4).strip())) {
-                                SheetTarget.setName(sheetNameTarget + "(JP)");
-                                sourceSheet.setName(sourceSheet.getName() + "(VN)");
+                                SheetTarget.setName(sheetNameTarget + "_JP");
+                                sourceSheet.setName(sourceSheet.getName() + "_VN");
                                 targetWorkbook.getWorksheets().addCopyAfter(sourceSheet, targetWorkbook.getWorksheets().get(j));
                             }
                         }
@@ -207,6 +214,38 @@ public class ExcelTool {
                     }
                     targetWorkbook.dispose();
                 }
+            }
+        } finally {
+            sourceWorkbook.dispose();
+        }
+
+        renameSheet(pathOutputFolderStep2);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(pathOutputFolderStep2))) {
+            for (Path path : stream) {
+                ExcelService.changeNameToVN(path);
+            }
+        }
+    }
+
+    private static void renameSheet(String pathFolder) throws Exception {
+        Workbook sourceWorkbook = new Workbook();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(pathFolder))) {
+            OUTER: for (Path path : stream) {
+                sourceWorkbook.loadFromFile(path.toString());
+                INNER: for (int i = 0; i < sourceWorkbook.getWorksheets().size(); i++) {
+                    Worksheet sourceSheet = sourceWorkbook.getWorksheets().get(i);
+                    String sheetName = sourceSheet.getName();
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(sheetName);
+                    if (matcher.find()) {
+                        String sheetNameNew = sheetName.substring(4);
+                        sourceSheet.setName(sheetNameNew);
+                    }
+                }
+                sourceWorkbook.saveToFile(path.toString(), ExcelVersion.Version2007);
+                sourceWorkbook.dispose();
+
+                ExcelService.removeSheetSignature(path);
             }
         } finally {
             sourceWorkbook.dispose();
@@ -229,8 +268,6 @@ public class ExcelTool {
                         continue;
                     }
                     if (!Files.isDirectory(path) && path.getFileName().toString().endsWith(".xlsx")) {
-                        // TODO here
-
                         String appendName = String.format("%03d_", noFile);  // following by files
 
                         /**
@@ -275,7 +312,7 @@ public class ExcelTool {
         - sua ten tat ca TKCT o folder temp
         - tao file gom sheet
         - doc file
-        
+
          */
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(pathFolderTKCTStep1))) {
             int noFile = 0;
@@ -314,21 +351,21 @@ public class ExcelTool {
 //                                    sheetTmp = sheet;
 //                                    break;
 //                                }
-//                                
-//                                
-//                                
+//
+//
+//
 //                                idxSheet++;
 //                            }
 //                            workbook.cloneSheet(1);
 //                        }
 //                        try (FileInputStream file = new FileInputStream(path.toFile());
 //                                final XSSFWorkbook workbook = (XSSFWorkbook) WorkbookFactory.create(file)) {
-//                            
+//
 //                            XSSFSheet sheet_copy = workbook.cloneSheet(3);
 //                            int num = workbook.getSheetIndex(sheet_copy);
 //                            workbook.setSheetName(num, sheet_copy.getSheetName() + "X");
 //                            file.close();
-//                            
+//
 //
 //                            FileOutputStream outputStream = new FileOutputStream(path.toFile());
 //                            workbook.write(outputStream);

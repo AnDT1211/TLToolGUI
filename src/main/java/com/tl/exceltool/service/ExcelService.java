@@ -29,6 +29,20 @@ public class ExcelService {
         String newName = appendFirst + path.getFileName();
         Files.move(path, Path.of(path.getParent().toString(), newName), StandardCopyOption.REPLACE_EXISTING);
     }
+    
+    /**
+     * sua ten file bang cach xoa '001_' o dau <br>
+     * path = '001_abc.xlsx' => 'abc.xlsx'
+     *
+     * @param path : path cua file muon sua ten
+     * @param appendFirst : string de append vao dau
+     */
+    public static void changeNameToVN(Path path) throws Exception {
+        // rename
+        String fileName = path.getFileName().toString();  // abcd.xlsx
+        String newName = fileName.substring(4, fileName.length() - 5) + "_VN.xlsx";
+        Files.move(path, Path.of(path.getParent().toString(), newName), StandardCopyOption.REPLACE_EXISTING);
+    }
 
     public static void createOutputFileStep1(Path newFilePath, Workbook workbook) throws Exception {
         try (workbook) {
