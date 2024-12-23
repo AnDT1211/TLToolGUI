@@ -1,12 +1,20 @@
 package com.tl.exceltool;
 
+import com.spire.xls.ExcelVersion;
+import com.spire.xls.Workbook;
+import com.spire.xls.Worksheet;
+import com.tl.exceltool.service.ExcelService;
+import com.tl.exceltool.service.ReadFileService;
 import java.io.File;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import org.apache.commons.lang3.StringUtils;
@@ -18,8 +26,11 @@ import org.apache.commons.lang3.StringUtils;
 public class ExcelToolGUI extends javax.swing.JFrame {
 
     List<File> listFileInputStep1;
-    
-    
+    List<File> listFileOutputStep2;
+
+    private final static String PATH_TEMPLATE_EXCEL_FILE = "C:\\Users\\andt\\EC\\EC41_ESS_Andt\\TL\\template\\template.xlsx";   // TODO sua lai duong dan tuong doi
+
+
     /**
      * Creates new form ExcelToolGUI
      */
@@ -49,16 +60,32 @@ public class ExcelToolGUI extends javax.swing.JFrame {
         jProgressBar1 = new javax.swing.JProgressBar();
         jLabel4 = new javax.swing.JLabel();
         jPanel7 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
+        ManyToOneBtn = new javax.swing.JButton();
         jPanel8 = new javax.swing.JPanel();
         jPanel10 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         textFieldInputFolderPathTkct_step1 = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
+        jPanel9 = new javax.swing.JPanel();
+        jLabel5 = new javax.swing.JLabel();
+        textFieldOutputFolderPathTkct_step2 = new javax.swing.JTextField();
         jPanel6 = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        listFileOutput_step2 = new javax.swing.JList<>();
+        jPanel11 = new javax.swing.JPanel();
+        jLabel6 = new javax.swing.JLabel();
+        textFileFileAlreadyReplacePath = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        jProgressBar2 = new javax.swing.JProgressBar();
+        jPanel12 = new javax.swing.JPanel();
+        jPanel13 = new javax.swing.JPanel();
+        OneToManyBtn = new javax.swing.JButton();
+        jPanel14 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jTabbedPane1.setBackground(new java.awt.Color(255, 255, 204));
 
         jPanel3.setBackground(new java.awt.Color(255, 255, 204));
 
@@ -85,17 +112,30 @@ public class ExcelToolGUI extends javax.swing.JFrame {
 
         jLabel2.setText("Đường dẫn Folder output");
 
-        textFieldOutputFolderPath_step1.setText("jTextField2");
+        textFieldOutputFolderPath_step1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFieldOutputFolderPath_step1FocusLost(evt);
+            }
+        });
 
         jLabel3.setText("Đường dẫn File liệt kê tên sheets");
 
-        textFieldFilePathSheetName_step1.setText("jTextField3");
+        textFieldFilePathSheetName_step1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFieldFilePathSheetName_step1FocusLost(evt);
+            }
+        });
 
         jLabel4.setText("Loading");
 
         jPanel7.setBackground(new java.awt.Color(204, 255, 204));
 
-        jButton1.setText("Many To One");
+        ManyToOneBtn.setText("Many To One");
+        ManyToOneBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ManyToOneBtnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
@@ -103,12 +143,12 @@ public class ExcelToolGUI extends javax.swing.JFrame {
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel7Layout.createSequentialGroup()
                 .addGap(43, 43, 43)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(ManyToOneBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(41, Short.MAX_VALUE))
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(ManyToOneBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         jPanel8.setBackground(new java.awt.Color(204, 255, 204));
@@ -234,32 +274,175 @@ public class ExcelToolGUI extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("Many To One", jPanel1);
 
+        jPanel9.setBackground(new java.awt.Color(204, 255, 255));
+
+        jLabel5.setText("Đường dẫn Folder chứa các file cần dịch");
+
+        textFieldOutputFolderPathTkct_step2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFieldOutputFolderPathTkct_step2FocusLost(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
+        jPanel9.setLayout(jPanel9Layout);
+        jPanel9Layout.setHorizontalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(textFieldOutputFolderPathTkct_step2))
+                .addContainerGap())
+        );
+        jPanel9Layout.setVerticalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel5)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(textFieldOutputFolderPathTkct_step2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jPanel6.setBackground(new java.awt.Color(255, 255, 204));
+
+        jScrollPane2.setViewportView(listFileOutput_step2);
+
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 54, Short.MAX_VALUE)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 22, Short.MAX_VALUE)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 155, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        jPanel11.setBackground(new java.awt.Color(204, 255, 204));
+
+        jLabel6.setText("Đường dẫn File sau khi chạy Tool Replace");
+
+        textFileFileAlreadyReplacePath.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFileFileAlreadyReplacePathFocusLost(evt);
+            }
+        });
+
+        jLabel7.setText("Loading");
+
+        jPanel12.setBackground(new java.awt.Color(204, 255, 204));
+
+        javax.swing.GroupLayout jPanel12Layout = new javax.swing.GroupLayout(jPanel12);
+        jPanel12.setLayout(jPanel12Layout);
+        jPanel12Layout.setHorizontalGroup(
+            jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel12Layout.setVerticalGroup(
+            jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 44, Short.MAX_VALUE)
+        );
+
+        jPanel13.setBackground(new java.awt.Color(204, 255, 204));
+
+        OneToManyBtn.setText("One To Many");
+        OneToManyBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                OneToManyBtnActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel13Layout = new javax.swing.GroupLayout(jPanel13);
+        jPanel13.setLayout(jPanel13Layout);
+        jPanel13Layout.setHorizontalGroup(
+            jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel13Layout.createSequentialGroup()
+                .addGap(43, 43, 43)
+                .addComponent(OneToManyBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(41, Short.MAX_VALUE))
+        );
+        jPanel13Layout.setVerticalGroup(
+            jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(OneToManyBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+        );
+
+        jPanel14.setBackground(new java.awt.Color(204, 255, 204));
+
+        javax.swing.GroupLayout jPanel14Layout = new javax.swing.GroupLayout(jPanel14);
+        jPanel14.setLayout(jPanel14Layout);
+        jPanel14Layout.setHorizontalGroup(
+            jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel14Layout.setVerticalGroup(
+            jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 44, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout jPanel11Layout = new javax.swing.GroupLayout(jPanel11);
+        jPanel11.setLayout(jPanel11Layout);
+        jPanel11Layout.setHorizontalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(textFileFileAlreadyReplacePath)
+                    .addComponent(jProgressBar2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(jPanel11Layout.createSequentialGroup()
+                        .addComponent(jLabel7)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel11Layout.createSequentialGroup()
+                        .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jPanel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        jPanel11Layout.setVerticalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel6)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(textFileFileAlreadyReplacePath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel7)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jProgressBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(72, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(81, 81, 81)
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(521, Short.MAX_VALUE))
+            .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(82, 82, 82)
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(369, Short.MAX_VALUE))
+                .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         jTabbedPane1.addTab("One To Many", jPanel2);
@@ -280,40 +463,354 @@ public class ExcelToolGUI extends javax.swing.JFrame {
 
     /**
      * event focus out cua textFieldInputFolderPathTkct_step1
-     * 
-     * @param evt 
+     *
+     * @param evt
      */
     private void textFieldInputFolderPathTkct_step1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldInputFolderPathTkct_step1FocusLost
 
-        clearPclList();
-        
+        clearPclList(true);
+
         if (!Files.exists(Path.of(textFieldInputFolderPathTkct_step1.getText()))) {
             JOptionPane.showMessageDialog(null, "Folder không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
-        setListFileToList();
-        
+
+        setListFileToList(true);
+
     }//GEN-LAST:event_textFieldInputFolderPathTkct_step1FocusLost
 
-    private void clearPclList() {
-        listFileInput_step1.setModel(new DefaultListModel());
-    }
-    
-    
-    private void setListFileToList() {
-        File[] inputFileStep1 = new File(textFieldInputFolderPathTkct_step1.getText()).listFiles();
-        DefaultListModel listModel1 = new DefaultListModel();
-        for (File pclFile : inputFileStep1) {
-            if (!StringUtils.contains(pclFile.getAbsolutePath(), "~$")) {
-                listModel1.addElement(pclFile.getAbsolutePath());
+
+    /**
+     * event focus out cua textFieldOutputFolderPath_step1
+     *
+     * @param evt
+     */
+    private void textFieldOutputFolderPath_step1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldOutputFolderPath_step1FocusLost
+
+        if (StringUtils.isBlank(textFieldOutputFolderPath_step1.getText())) {
+            return;
+        }
+        if (!checkFolderExist(textFieldOutputFolderPath_step1.getText())) {
+            JOptionPane.showMessageDialog(null, "Folder không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_textFieldOutputFolderPath_step1FocusLost
+
+    List<String> sheetNames;
+
+    /**
+     * event focus out cua textFieldFilePathSheetName_step1
+     *
+     * @param evt
+     */
+    private void textFieldFilePathSheetName_step1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldFilePathSheetName_step1FocusLost
+
+        if (StringUtils.isBlank(textFieldFilePathSheetName_step1.getText())) {
+            return;
+        }
+        if (isDirectory(textFieldFilePathSheetName_step1.getText())) {
+            JOptionPane.showMessageDialog(null, "Hãy Input đường dẫn của File chứa tên sheets", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            String fileContent = ReadFileService.readContentFromFile(Path.of(textFieldFilePathSheetName_step1.getText()));
+            sheetNames = fileContent.lines().map(x -> x.replaceAll("\\s", "").strip()).collect(Collectors.toList());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_textFieldFilePathSheetName_step1FocusLost
+
+
+
+    private final static String outputFileNameStep1 = "Output_Step1.xlsx";
+
+
+    /**
+     * event Click cho ManyToOneBtn
+     *
+     * @param evt
+     */
+    private void ManyToOneBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ManyToOneBtnActionPerformed
+
+        jProgressBar1.setMinimum(0);
+        jProgressBar1.setMaximum(100);
+        jProgressBar1.setValue(0);
+
+        if (sheetNames == null || sheetNames.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Hãy Input đường dẫn của File chứa tên sheets", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (listFileInputStep1 == null || listFileInputStep1.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Folder chứa TKCT không tồn tại hoặc folder không có file TKCT", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (StringUtils.isBlank(textFieldOutputFolderPath_step1.getText()) || !checkFolderExist(textFieldOutputFolderPath_step1.getText())) {
+            JOptionPane.showMessageDialog(null, "Folder Output không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        jProgressBar1.setValue(0);
+        int fileCount = listFileInputStep1.size();
+        int stepProgressBar = (int) (100 / fileCount);
+
+
+        /**
+         * Main Stream
+         */
+        Workbook targetWorkbook = new Workbook();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(textFieldInputFolderPathTkct_step1.getText()))) {   // TODO
+
+            //Create a another Workbook
+            targetWorkbook.loadFromFile(PATH_TEMPLATE_EXCEL_FILE);
+
+            int noFile = 0;
+            for (Path path : stream) {
+                noFile++;
+                try {
+                    String fileNameTKCT = path.getFileName().toString();
+                    if (fileNameTKCT.startsWith("~$")) {
+                        continue;
+                    }
+                    if (!Files.isDirectory(path) && path.getFileName().toString().endsWith(".xlsx")) {
+                        String appendName = String.format("%03d_", noFile);  // following by files
+
+                        /**
+                         * Create file output
+                         */
+                        Workbook sourceWorkbook = new Workbook();
+                        sourceWorkbook.loadFromFile(path.toString());
+
+                        for (int i = 0; i < sourceWorkbook.getWorksheets().size(); i++) {
+                            Worksheet sourceSheet = sourceWorkbook.getWorksheets().get(i);
+                            String sheetName = sourceSheet.getName().replaceAll("\\s", "").strip();
+                            if (sheetNames.contains(sheetName)) {
+                                Worksheet targetWorksheet = targetWorkbook.getWorksheets().add(appendName + sourceSheet.getName());
+                                targetWorksheet.copyFrom(sourceSheet);
+                            }
+                        }
+
+                        //Save the result file
+                        String outputFile = Path.of(textFieldOutputFolderPath_step1.getText(), outputFileNameStep1).toString();
+                        targetWorkbook.saveToFile(outputFile, ExcelVersion.Version2007);
+                        sourceWorkbook.dispose();
+
+                        /**
+                         * Change name of files
+                         */
+                        ExcelService.changeName(path, appendName);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+                }
+
+                jProgressBar1.setValue(jProgressBar1.getValue() + stepProgressBar);
+                jProgressBar1.validate();
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            targetWorkbook.dispose();
+            try {
+                ExcelService.removeSheetSignature(Path.of(textFieldOutputFolderPath_step1.getText(), outputFileNameStep1));
+                ExcelService.removeSheetAtIndex(Path.of(textFieldOutputFolderPath_step1.getText(), outputFileNameStep1), 0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+                return;
             }
         }
-        listFileInput_step1.setModel(listModel1);
-        listFileInputStep1 = Arrays.asList(inputFileStep1);
+
+        JOptionPane.showMessageDialog(null, "Successful", "INFO", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_ManyToOneBtnActionPerformed
+
+    /**
+     * event Click cho OneToManyBtn
+     *
+     * @param evt
+     */
+    private void OneToManyBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OneToManyBtnActionPerformed
+
+        jProgressBar2.setMinimum(0);
+        jProgressBar2.setMaximum(100);
+        jProgressBar2.setValue(0);
+
+        if (listFileOutputStep2 == null || listFileOutputStep2.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Folder chứa TKCT không tồn tại hoặc folder không có file TKCT", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (StringUtils.isBlank(textFileFileAlreadyReplacePath.getText()) || !checkFolderExist(textFileFileAlreadyReplacePath.getText())) {
+            JOptionPane.showMessageDialog(null, "File sau khi chạy Tool Replace không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+
+        jProgressBar2.setValue(0);
+        int fileCount = listFileOutputStep2.size();
+        int stepProgressBar = (int) (100 / fileCount);
+
+        /**
+         * Main Stream
+         */
+        Workbook targetWorkbook = new Workbook();
+        Workbook sourceWorkbook = new Workbook();
+        sourceWorkbook.loadFromFile(textFileFileAlreadyReplacePath.getText());
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(textFieldOutputFolderPathTkct_step2.getText()))) {
+            OUTER: for (Path path : stream) {
+                String noFile = path.getFileName().toString().substring(0, 3);
+
+                INNER: for (int i = 0; i < sourceWorkbook.getWorksheets().size(); i++) {
+                    Worksheet sourceSheet = sourceWorkbook.getWorksheets().get(i);
+                    String sheetNameSource = sourceSheet.getName();
+                    String noFileSheetNameSource = sheetNameSource.substring(0, 3);
+
+                    if (noFile.equals(noFileSheetNameSource)) {
+                        targetWorkbook.loadFromFile(path.toString());
+
+                        for (int j = 0; j < targetWorkbook.getWorksheets().size(); j++) {
+                            Worksheet SheetTarget = targetWorkbook.getWorksheets().get(j);
+                            String sheetNameTarget = SheetTarget.getName();
+
+                            if (sheetNameTarget.replaceAll("\\s", "").strip().equals(sheetNameSource.replaceAll("\\s", "").strip().substring(4).strip())) {
+                                SheetTarget.setName(sheetNameTarget + "_JP");
+                                sourceSheet.setName(sourceSheet.getName() + "_VN");
+                                targetWorkbook.getWorksheets().addCopyAfter(sourceSheet, targetWorkbook.getWorksheets().get(j));
+                            }
+                        }
+                        targetWorkbook.saveToFile(path.toString(), ExcelVersion.Version2007);
+                    }
+                    targetWorkbook.dispose();
+                }
+
+                jProgressBar2.setValue(jProgressBar2.getValue() + stepProgressBar);
+                jProgressBar2.validate();
+            }
+
+            renameSheet(textFieldOutputFolderPathTkct_step2.getText());
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+
+        } finally {
+            sourceWorkbook.dispose();
+        }
+
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(textFieldOutputFolderPathTkct_step2.getText()))) {
+            for (Path path : stream) {
+                ExcelService.changeNameToVN(path);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.toString(), "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+
+        JOptionPane.showMessageDialog(null, "Successful", "INFO", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_OneToManyBtnActionPerformed
+
+
+    private static final String regex = "^\\d{3}_";
+
+    private static void renameSheet(String pathFolder) throws Exception {
+        Workbook sourceWorkbook = new Workbook();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(pathFolder))) {
+            OUTER: for (Path path : stream) {
+                sourceWorkbook.loadFromFile(path.toString());
+                INNER: for (int i = 0; i < sourceWorkbook.getWorksheets().size(); i++) {
+                    Worksheet sourceSheet = sourceWorkbook.getWorksheets().get(i);
+                    String sheetName = sourceSheet.getName();
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(sheetName);
+                    if (matcher.find()) {
+                        String sheetNameNew = sheetName.substring(4);
+                        sourceSheet.setName(sheetNameNew);
+                    }
+                }
+                sourceWorkbook.saveToFile(path.toString(), ExcelVersion.Version2007);
+                sourceWorkbook.dispose();
+
+                ExcelService.removeSheetSignature(path);
+            }
+        } finally {
+            sourceWorkbook.dispose();
+        }
     }
-    
-    
+
+    /**
+     * event focus out cua textFieldOutputFolderPathTkct_step2
+     *
+     * @param evt
+     */
+    private void textFieldOutputFolderPathTkct_step2FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldOutputFolderPathTkct_step2FocusLost
+        clearPclList(false);
+
+        if (!Files.exists(Path.of(textFieldOutputFolderPathTkct_step2.getText()))) {
+            JOptionPane.showMessageDialog(null, "Folder không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        setListFileToList(false);
+    }//GEN-LAST:event_textFieldOutputFolderPathTkct_step2FocusLost
+
+    /**
+     * event forcus out cua textFileFileAlreadyReplacePath
+     *
+     * @param evt
+     */
+    private void textFileFileAlreadyReplacePathFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFileFileAlreadyReplacePathFocusLost
+
+        if (StringUtils.isBlank(textFileFileAlreadyReplacePath.getText())) {
+            return;
+        }
+        if (!checkFolderExist(textFileFileAlreadyReplacePath.getText())) {
+            JOptionPane.showMessageDialog(null, "File không tồn tại", "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+
+    }//GEN-LAST:event_textFileFileAlreadyReplacePathFocusLost
+
+    public static boolean isDirectory(String path) {
+        return path !=null && new File(path).isDirectory();
+    }
+
+    private static boolean checkFolderExist(String path) {
+        return Files.exists(Path.of(path));
+    }
+
+    private void clearPclList(boolean isStep1) {
+        if (isStep1) {
+            listFileInput_step1.setModel(new DefaultListModel());
+        } else {
+            listFileOutput_step2.setModel(new DefaultListModel());
+        }
+    }
+
+
+    private void setListFileToList(boolean isStep1) {
+        if (isStep1) {
+            File[] inputFileStep1 = new File(textFieldInputFolderPathTkct_step1.getText()).listFiles();
+            DefaultListModel listModel1 = new DefaultListModel();
+            for (File pclFile : inputFileStep1) {
+                if (!StringUtils.contains(pclFile.getAbsolutePath(), "~$")) {
+                    listModel1.addElement(pclFile.getAbsolutePath());
+                }
+            }
+            listFileInput_step1.setModel(listModel1);
+            listFileInputStep1 = Arrays.asList(inputFileStep1);
+        } else {
+            // listFileOutputStep2
+            File[] inputFileStep1 = new File(textFieldOutputFolderPathTkct_step2.getText()).listFiles();
+            DefaultListModel listModel1 = new DefaultListModel();
+            for (File pclFile : inputFileStep1) {
+                if (!StringUtils.contains(pclFile.getAbsolutePath(), "~$")) {
+                    listModel1.addElement(pclFile.getAbsolutePath());
+                }
+            }
+            listFileOutput_step2.setModel(listModel1);
+            listFileOutputStep2 = Arrays.asList(inputFileStep1);
+        }
+    }
+
+
     /**
      * @param args the command line arguments
      */
@@ -321,7 +818,7 @@ public class ExcelToolGUI extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -350,13 +847,21 @@ public class ExcelToolGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton ManyToOneBtn;
+    private javax.swing.JButton OneToManyBtn;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
+    private javax.swing.JPanel jPanel11;
+    private javax.swing.JPanel jPanel12;
+    private javax.swing.JPanel jPanel13;
+    private javax.swing.JPanel jPanel14;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -364,12 +869,18 @@ public class ExcelToolGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
     private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JProgressBar jProgressBar2;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JList<String> listFileInput_step1;
+    private javax.swing.JList<String> listFileOutput_step2;
     private javax.swing.JTextField textFieldFilePathSheetName_step1;
     private javax.swing.JTextField textFieldInputFolderPathTkct_step1;
+    private javax.swing.JTextField textFieldOutputFolderPathTkct_step2;
     private javax.swing.JTextField textFieldOutputFolderPath_step1;
+    private javax.swing.JTextField textFileFileAlreadyReplacePath;
     // End of variables declaration//GEN-END:variables
 }
